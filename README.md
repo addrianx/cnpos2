@@ -1,5 +1,5 @@
 # cnpos2
-
+Aplikasi Point Of Sales Berbasis Vue 3 (Option API)
 ## Project setup
 ```
 npm install
