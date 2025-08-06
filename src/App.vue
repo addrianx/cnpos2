@@ -1,26 +1,40 @@
-<template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
-</template>
-
-<script>
-import HelloWorld from './components/HelloWorld.vue'
-
-export default {
-  name: 'App',
-  components: {
-    HelloWorld
-  }
-}
-</script>
-
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+/* Custom perkuat untuk NProgress */
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: #29d; /* Warna biru */
+  position: fixed;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  transition: all 0.3s ease;
 }
 </style>
+
+<template>
+  <component :is="layoutComponent">
+    <router-view />
+  </component>
+</template>
+
+
+<script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+// Import layout komponen
+import AppLayout from './layouts/AppLayout.vue'
+import BlankLayout from './layouts/BlankLayout.vue'
+
+const route = useRoute()
+
+const layoutComponent = computed(() => {
+  if (route.meta.layout === 'blank') return BlankLayout
+  return AppLayout
+})
+</script>
