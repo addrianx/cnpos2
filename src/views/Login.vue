@@ -72,6 +72,7 @@ export default {
       if (route.query.logout === 'true') {
         success.value = true
         successMessage.value = 'Anda berhasil logout.'
+        setTimeout(() => errorMessage.value = '', 3000)
       } else if (route.query.forced === 'true') {
         error.value = true
         errorMessage.value = 'Anda harus login terlebih dahulu untuk mengakses dashboard.'

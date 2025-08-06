@@ -175,7 +175,7 @@ export default {
 
     const fetchTotalProduk = async () => {
       try {
-        const res = await axios.get('http://localhost/login_api_lumen/public/api/produk', {
+        const res = await axios.get('http://localhost/login_api_lumen/public/api/all_produk', {
           headers: {
             Authorization: `Bearer ${token}`
           }

@@ -47,26 +47,38 @@
             <div v-else class="text-muted">Belum ada kategori yang ditambahkan.</div>
 
             <!-- Pagination -->
-            <nav v-if="totalPages > 1" class="mt-4">
-              <ul class="pagination justify-content-center mb-0">
-                <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                  <button class="page-link" @click="currentPage--">Sebelumnya</button>
-                </li>
-
-                <li 
-                  class="page-item" 
+            <div class="d-flex justify-content-center justify-content-lg-end align-items-center p-4 mt-4">
+              <div class="btn-group">
+                <button 
+                  class="btn btn-outline-primary btn-sm" 
+                  :disabled="currentPage === 1" 
+                  :style="{ cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }"
+                  @click="currentPage--"
+                >
+                  «
+                </button>
+                
+                <button 
                   v-for="page in totalPages" 
                   :key="page"
-                  :class="{ active: page === currentPage }"
+                  class="btn btn-sm" 
+                  :class="page === currentPage ? 'btn-primary' : 'btn-outline-primary'"
+                  :style="{ cursor: page === currentPage ? 'default' : 'pointer' }"
+                  @click="currentPage = page"
                 >
-                  <button class="page-link" @click="currentPage = page">{{ page }}</button>
-                </li>
-
-                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                  <button class="page-link" @click="currentPage++">Berikutnya</button>
-                </li>
-              </ul>
-            </nav>
+                  {{ page }}
+                </button>
+                
+                <button 
+                  class="btn btn-outline-primary btn-sm" 
+                  :disabled="currentPage === totalPages"
+                  :style="{ cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }"
+                  @click="currentPage++"
+                >
+                  »
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>

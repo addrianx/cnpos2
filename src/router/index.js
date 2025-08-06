@@ -1,6 +1,62 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
+import jwt_decode from 'jwt-decode'
+import axios from 'axios'
+
+NProgress.configure({ showSpinner: false })
+
+// ========================
+// FUNGSI PENDUKUNG
+// ========================
+const isTokenExpired = (token) => {
+  try {
+    const decoded = jwt_decode(token)
+    return decoded.exp < Date.now() / 1000
+  } catch {
+    return true
+  }
+}
+
+const refreshAuthToken = async () => {
+  try {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (!refreshToken) throw new Error('No refresh token available');
+
+    const response = await axios.post(
+      'http://localhost/login_api_lumen/public/api/auth/refresh',
+      { refresh_token: refreshToken },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    // Pastikan key sesuai dengan response backend
+    const accessToken = response.data.token || response.data.access_token;
+    const newRefreshToken = response.data.refresh_token;
+
+    if (!accessToken) {
+      throw new Error('Invalid token response');
+    }
+
+    // Update storage
+    localStorage.setItem('token', accessToken);
+    if (newRefreshToken) {
+      localStorage.setItem('refresh_token', newRefreshToken);
+    }
+
+    return accessToken;
+  } catch (error) {
+    console.error('Refresh failed:', {
+      error: error.message,
+      response: error.response?.data
+    });
+    throw error;
+  }
+};
 
 // Import component yang langsung (non-lazy)
 import DashboardView from '../views/DashboardView.vue'
@@ -8,6 +64,9 @@ import TambahProduk from '../views/products/TambahProduk.vue'
 import DaftarProduk from '../views/products/DaftarProduk.vue'
 import EditProduk from '../views/products/EditProduk.vue'
 import KategoriProduk from '../views/products/KategoriProduk.vue'
+import StockProduk from '@/views/products/StockProduk.vue'
+import TambahStok from '@/views/products/TambahStok.vue'
+import EditStok from '@/views/products/EditStok.vue'
 
 const routes = [
   {
@@ -49,6 +108,24 @@ const routes = [
     name: 'Kategori Produk',
     component: KategoriProduk,
     meta: { layout: 'app', requiresAuth: true }
+  },
+  {
+    path: '/dashboard/stok-produk',
+    name: 'Stok Produk',
+    component: StockProduk,
+    meta: { layout: 'app', requiresAuth: true }
+  },
+  {
+    path: '/dashboard/tambah-stok',
+    name: 'Tambah Stok',
+    component: TambahStok,
+    meta: { layout: 'app', requiresAuth: true }
+  },
+  {
+    path: '/dashboard/edit-stok',
+    name: 'Edit Stok',
+    component: EditStok,
+    meta: { layout: 'app', requiresAuth: true }
   }
 ]
 
@@ -57,25 +134,52 @@ const router = createRouter({
   routes
 })
 
-NProgress.configure({ showSpinner: false })
+router.beforeEach(async (to, from, next) => {
+  NProgress.start();
 
-router.beforeEach((to, from, next) => {
-  NProgress.start()
+  const token = localStorage.getItem('token');
+  const requiresAuth = to.meta.requiresAuth;
 
-  const token = localStorage.getItem('token')
-  const isAuthenticated = !!token
-
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ name: 'LoginPage', query: { forced: 'true' } })
-  } else if (to.name === 'LoginPage' && isAuthenticated) {
-    next({ name: 'Dashboard' })
-  } else {
-    next()
+  // 1. Public routes
+  if (!requiresAuth) {
+    if (to.name === 'LoginPage' && token) {
+      next({ name: 'Dashboard' });
+    } else {
+      next();
+    }
+    NProgress.done();
+    return;
   }
-})
 
-router.afterEach(() => {
-  NProgress.done()
-})
+  // 2. Protected routes
+  if (token) {
+    if (!isTokenExpired(token)) {
+      next();
+      NProgress.done();
+      return;
+    }
+
+    try {
+      await refreshAuthToken(); // Tidak perlu simpan ke variabel
+      next();
+    } catch (error) {
+      // Error sudah dihandle oleh axios interceptor
+      return;
+    } finally {
+      NProgress.done();
+    }
+    return;
+  }
+
+  // 3. No token at all
+  next({
+    name: 'LoginPage',
+    query: {
+      forced: 'true',
+      redirect: to.fullPath
+    }
+  });
+  NProgress.done();
+});
 
 export default router
