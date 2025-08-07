@@ -8,14 +8,9 @@
         </div>
         <div class="col-md-4">
           <div class="input-group">
-            <input 
-              type="text" 
-              class="form-control" 
-              placeholder="Cari produk..."
-              v-model="searchQuery"
-            >
+            <input type="text" class="form-control" placeholder="Cari produk..." v-model="searchQuery">
             <button class="btn btn-outline-secondary" type="button">
-              <i class="fas fa-search"></i>
+              <i class="fa fa-search"></i>
             </button>
           </div>
         </div>
@@ -44,8 +39,7 @@
                   <th width="50px">No</th>
                   <th>Nama Produk</th>
                   <th>Kategori</th>
-                  <th>Stok Awal</th>
-                  <th>Stok Tersedia</th>
+                  <th>Stok Total</th>
                   <th>Satuan</th>
                   <th>Terakhir Update</th>
                   <th width="120px">Aksi</th>
@@ -53,32 +47,28 @@
               </thead>
               <tbody>
                 <!-- Data Hardcoded -->
-                <tr v-for="(product, index) in filteredProducts" :key="product.id">
-                  <td>{{ index + 1 }}</td>
-                  <td>{{ product.name }}</td>
-                  <td>{{ product.category }}</td>
-                  <td>{{ product.initial_stock }}</td>
-                  <td>
-                    <span :class="{
-                      'text-success': product.current_stock > 10,
-                      'text-warning': product.current_stock <= 10 && product.current_stock > 0,
-                      'text-danger': product.current_stock <= 0
-                    }">
-                      {{ product.current_stock }}
-                    </span>
-                  </td>
-                  <td>{{ product.unit }}</td>
-                  <td>{{ product.last_updated }}</td>
-                  <td>
-                    <router-link to="" class="btn btn-sm btn-outline-primary me-1">
-                      <i class="fa fa-edit"></i>
-                    </router-link>
-                    <button class="btn btn-sm btn-outline-danger">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
+                  <tr v-for="(product, index) in paginatedProducts" :key="product.id">
+                    <td>{{ (currentPage - 1) * perPage + index + 1 }}</td>
+                    <td>{{ product.nama_produk }}</td>
+                    <td>{{ product.kategori }}</td>
+                    <td>
+                      <span :class="{
+                        'text-success': getStokAkhir(product) > 10,
+                        'text-warning': getStokAkhir(product) <= 10 && getStokAkhir(product) > 0,
+                        'text-danger': getStokAkhir(product) <= 0
+                      }">
+                        {{ getStokAkhir(product) }}
+                      </span>
+                    </td>
+                    <td>{{ product.satuan }}</td>
+                    <td>{{ product.terakhir_update }}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-danger">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  </tbody>
             </table>
           </div>
 
@@ -96,7 +86,7 @@
               <div class="card border-start border-success border-4">
                 <div class="card-body">
                   <h6 class="text-muted">Stok Tersedia</h6>
-                  <h3 class="mb-0">156</h3>
+                  <h3 class="mb-0">{{ totalStokKeseluruhan() }}</h3>
                 </div>
               </div>
             </div>
@@ -104,7 +94,7 @@
               <div class="card border-start border-warning border-4">
                 <div class="card-body">
                   <h6 class="text-muted">Hampir Habis</h6>
-                  <h3 class="mb-0">5</h3>
+                  <h3 class="mb-0">{{ cariStokHampirHabis(item) }}</h3>
                 </div>
               </div>
             </div>
@@ -112,7 +102,7 @@
               <div class="card border-start border-danger border-4">
                 <div class="card-body">
                   <h6 class="text-muted">Stok Kosong</h6>
-                  <h3 class="mb-0">2</h3>
+                  <h3 class="mb-0">{{ getStokKosong() }}</h3>
                 </div>
               </div>
             </div>
@@ -120,100 +110,127 @@
         </div>
 
         <!-- Pagination -->
-            <div class="d-flex justify-content-center justify-content-lg-end align-items-center p-4 mt-4">
-                <div class="btn-group">
-                    <button class="btn btn-outline-primary btn-sm" disabled style="cursor: not-allowed">
-                    «
-                    </button>
-                    <button class="btn btn-sm btn-primary" style="cursor: default">
-                    1
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary">
-                    2
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary">
-                    3
-                    </button>
-                    <button class="btn btn-outline-primary btn-sm">
-                    »
-                    </button>
-                </div>
-            </div>
+    <div class="d-flex justify-content-center justify-content-lg-end align-items-center p-4 mt-4">
+      <div class="btn-group">
+        <button class="btn btn-outline-primary btn-sm"
+                :disabled="currentPage === 1"
+                @click="currentPage--">
+          «
+        </button>
+
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          class="btn btn-sm"
+          :class="page === currentPage ? 'btn-primary' : 'btn-outline-primary'"
+          @click="currentPage = page"
+        >
+          {{ page }}
+        </button>
+
+        <button class="btn btn-outline-primary btn-sm"
+                :disabled="currentPage === totalPages"
+                @click="currentPage++">
+          »
+        </button>
+      </div>
+    </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-
+import axiosInstance from '@/utils/axiosInstance';
 
 export default {
   data() {
     return {
       searchQuery: '',
-      products: [
-        {
-          id: 1,
-          name: 'Indomie Goreng',
-          category: 'Makanan Instan',
-          initial_stock: 50,
-          current_stock: 32,
-          unit: 'dus',
-          last_updated: '2023-05-15 14:30'
-        },
-        {
-          id: 2,
-          name: 'Aqua Botol 600ml',
-          category: 'Minuman',
-          initial_stock: 100,
-          current_stock: 15,
-          unit: 'pcs',
-          last_updated: '2023-05-16 09:15'
-        },
-        {
-          id: 3,
-          name: 'Minyak Goreng 2L',
-          category: 'Sembako',
-          initial_stock: 30,
-          current_stock: 0,
-          unit: 'botol',
-          last_updated: '2023-05-14 16:45'
-        },
-        {
-          id: 4,
-          name: 'Gula Pasir 1kg',
-          category: 'Sembako',
-          initial_stock: 40,
-          current_stock: 5,
-          unit: 'kg',
-          last_updated: '2023-05-16 11:20'
-        }
-      ]
-    }
+      products: [],
+          currentPage: 1,
+    perPage: 5, // jumlah item per halaman
+    };
   },
+
   computed: {
     filteredProducts() {
       return this.products.filter(product => {
-        return product.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-               product.category.toLowerCase().includes(this.searchQuery.toLowerCase())
-      })
+        const name = product.nama_produk?.toLowerCase() || '';
+        const category = product.kategori?.toLowerCase() || '';
+        return name.includes(this.searchQuery.toLowerCase()) || category.includes(this.searchQuery.toLowerCase());
+      });
+    },
+    paginatedProducts() {
+      const start = (this.currentPage - 1) * this.perPage;
+      const end = start + this.perPage;
+      return this.filteredProducts.slice(start, end);
+    },
+    totalPages() {
+      return Math.ceil(this.filteredProducts.length / this.perPage);
     }
+  },
+
+  methods: {
+    async loadStokProduk() {
+      try {
+        const response = await axiosInstance.get('/stok-produk');
+        this.products = response.data.data || [];
+      } catch (error) {
+        console.error('Gagal memuat data stok produk:', error);
+      }
+    },
+    getStokAkhir(product) {
+        const stokAwal = Number(product.stok_akhir) || 0;
+        const totalMasuk = Number(product.total_masuk) || 0;
+        const totalKeluar = Number(product.total_keluar) || 0;
+
+        return stokAwal + totalMasuk - totalKeluar;
+      },
+    totalStokKeseluruhan() {
+    return this.products.reduce((total, product) => {
+      const stokAkhir = this.getStokAkhir(product);
+      return total + stokAkhir;
+    }, 0);
+  },
+    cariStokHampirHabis() {
+    return this.products.filter(product => {
+      return this.getStokAkhir(product) <= 10;
+    }).length;
+  },
+  getStokKosong() {
+  return this.products.filter(product => {
+    return this.getStokAkhir(product) === 0;
+  }).length;
+},
+
+    goToEditStok(id) {
+      this.$router.push(`/dashboard/edit-stok/${id}`);
+    }
+  },
+
+  mounted() {
+    this.loadStokProduk();
   }
-}
+};
 </script>
 
+
 <style scoped>
-.card {
-  border-radius: 0.5rem;
-}
-.table th {
-  border-top: none;
-  font-weight: 600;
-  color: #495057;
-}
-.border-4 {
-  border-width: 4px !important;
-}
+  .card {
+    border-radius: 0.5rem;
+  }
+
+  .table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+  }
+
+  .border-4 {
+    border-width: 4px !important;
+  }
+
   .pagination {
     display: flex;
     justify-content: center;

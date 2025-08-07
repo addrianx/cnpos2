@@ -44,7 +44,7 @@
                         :key="product.id" 
                         :value="product.id"
                       >
-                        {{ product.nama_produk }} (Stok: {{ product.stok }})
+                        {{ product.nama_produk }} (Stok dasar: {{ product.stok }})
                       </option>
                     </select>
                     <div class="invalid-feedback">{{ errors.product_id }}</div>
@@ -123,7 +123,7 @@
 
 <script>
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import axiosInstance from '@/utils/axiosInstance';
 
 export default {
   setup() {
@@ -145,7 +145,7 @@ export default {
     });
 
     // Methods
-    const api = axios.create({
+    const api = axiosInstance.create({
     baseURL: 'http://localhost/login_api_lumen/public/api',
     })
 
@@ -181,11 +181,15 @@ export default {
     };
 
     const submitStockAddition = async () => {
+      // Reset error state
+        if (isLoading.value) return; // Cegah double-click
+  isLoading.value = true;
       errors.value = {};
+
       
-      // Validasi
+      // Validasi form
       if (!selectedProductId.value) {
-        errors.value.product_id = 'Pilih produk terlebih dahulu';
+        errors.value.produk_id = 'Pilih produk terlebih dahulu';
         return;
       }
       
@@ -193,37 +197,73 @@ export default {
         errors.value.jumlah = 'Jumlah harus lebih dari 0';
         return;
       }
+      console.log(errors.value.jumlah)
       
-      if (!stockAddition.value.tanggal_masuk) {
-        errors.value.tanggal_masuk = 'Tanggal masuk harus diisi';
-        return;
+      if (!stockAddition.value.tanggal_masuk || stockAddition.value.tanggal_masuk.trim() === '') {
+        errors.value.tanggal_masuk = 'Tanggal harus diisi';
+      } else {
+        delete errors.value.tanggal_masuk;
       }
-      
+
+      console.log('submitStockAddition() called');
+
+      console.log('selectedProductId:', selectedProductId.value);
+      console.log('jumlah:', stockAddition.value.jumlah);
+      console.log('tanggal:', stockAddition.value.tanggal_masuk);
+      console.log('keterangan:', stockAddition.value.keterangan);
+
       try {
         isLoading.value = true;
         
-        await axios.post(`/api/products/${selectedProductId.value}/add-stock`, {
-          ...stockAddition.value,
-          tipe: 'masuk' // Default untuk halaman tambah stok
-        });
+        // Data payload sesuai dengan API
+        const payload = {
+          produk_id: selectedProductId.value,
+          jumlah: stockAddition.value.jumlah,
+          tanggal: stockAddition.value.tanggal,
+          keterangan: stockAddition.value.keterangan || 'Penambahan stok',
+          tipe: 'masuk'
+        };
+
+
+        // Menggunakan endpoint yang benar
+        await axiosInstance.post('/stok-produk', payload);
         
         // Refresh data produk
         await loadProducts();
         
         // Reset form
-        stockAddition.value = {
-          jumlah: 1,
-          tanggal_masuk: new Date().toISOString().split('T')[0],
-          keterangan: ''
-        };
+        resetForm();
         
+        // Notifikasi sukses
         successMessage.value = 'Stok berhasil ditambahkan!';
-        setTimeout(() => successMessage.value = '', 3000);
+        setTimeout(() => {
+          successMessage.value = '';
+          // Optional: Redirect ke halaman stok setelah 2 detik
+          // router.push('/stok');
+        }, 3000);
+        
       } catch (error) {
-        handleError(error, 'Gagal menambahkan stok');
+        // Handle error response dari API
+        if (error.response?.status === 422) {
+          // Jika validasi gagal di server
+          errors.value = error.response.data.errors || {};
+          errorMessage.value = 'Terdapat kesalahan pada input. Silakan periksa kembali.';
+        } else {
+          handleError(error, 'Gagal menambahkan stok');
+        }
       } finally {
         isLoading.value = false;
       }
+    };
+
+    const resetForm = () => {
+      selectedProductId.value = '';
+      stockAddition.value = {
+        jumlah: 1,
+        tanggal: new Date().toISOString().split('T')[0],
+        keterangan: '',
+        tipe: 'masuk'
+      };
     };
 
     const handleError = (err, defaultMessage) => {

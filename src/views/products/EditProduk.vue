@@ -103,7 +103,7 @@
               </div>
 
               <div class="card-footer d-flex justify-content-end bg-light border-top">
-                <button type="submit" class="btn btn-success" :disabled="isLoading">
+                <button type="submit" class="btn btn-success text-white" :disabled="isLoading">
                   <span v-if="isLoading" class="spinner-border spinner-border-sm me-1"></span>
                   {{ isLoading ? 'Memproses...' : 'Update' }}
                 </button>

@@ -9,8 +9,6 @@ import './assets/vendors/ti-icons/css/themify-icons.css'
 import './assets/vendors/css/vendor.bundle.base.css'
 import './assets/vendors/font-awesome/css/font-awesome.min.css'
 
-import './assets/vendors/js/vendor.bundle.base.js'
-
 const app = createApp(App)
 
 app.component('AppFooter', AppFooter)

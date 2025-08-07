@@ -38,8 +38,8 @@
               >
                 <div class="card-body d-flex justify-content-between align-items-center py-2 px-3">
                   <div>{{ kategori.nama_kategori }}</div>
-                  <button class="btn btn-sm btn-danger" @click="hapusKategori(kategori.id)">
-                    Hapus
+                  <button class="btn btn-sm btn-danger text-white" @click="hapusKategori(kategori.id)">
+                    <i class="fa fa-trash"></i>
                   </button>
                 </div>
               </div>

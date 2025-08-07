@@ -122,7 +122,7 @@ const routes = [
     meta: { layout: 'app', requiresAuth: true }
   },
   {
-    path: '/dashboard/edit-stok',
+    path: '/dashboard/edit-stok/:id',
     name: 'Edit Stok',
     component: EditStok,
     meta: { layout: 'app', requiresAuth: true }
