@@ -61,27 +61,6 @@
                     <div class="invalid-feedback">{{ errors.harga }}</div>
                   </div>
 
-                  <div class="col-md-6">
-                    <label class="form-label">Stok</label>
-                    <div class="input-group">
-                      <input 
-                        v-model="form.stok" 
-                        type="number" 
-                        class="form-control"
-                        :class="{ 'is-invalid': errors.stok }" 
-                        :disabled="!isStockEditable || isLoading"
-                      >
-                      <button 
-                        class="btn btn-outline-secondary" 
-                        type="button" 
-                        @click="showPasswordModal = true"
-                        :disabled="isLoading"
-                      >
-                        <i class="fas fa-edit"></i>
-                      </button>
-                    </div>
-                    <div class="invalid-feedback">{{ errors.stok }}</div>
-                  </div>
 
                   <div class="col-md-6">
                     <label class="form-label">Deskripsi</label>
@@ -135,29 +114,7 @@
     </template>
   </DynamicModal>
 
-  <!-- Dynamic Modal for Password -->
-  <DynamicModal
-    :show="showPasswordModal"
-    title="Verifikasi Admin"
-    :loading="isVerifying"
-    confirm-text="Verifikasi"
-    @close="closePasswordModal"
-    @confirm="verifyAdminPassword"
-    :disable-confirm="!adminPassword"
-  >
-    <template #body>
-      <div class="mb-3">
-        <label class="form-label">Password Admin</label>
-        <input 
-          v-model="adminPassword" 
-          type="password" 
-          class="form-control" 
-          placeholder="Masukkan password admin"
-          :disabled="isVerifying"
-        >
-      </div>
-    </template>
-  </DynamicModal>
+
   </div>
 </template>
 
@@ -174,13 +131,9 @@ const produkId = route.params.id
 // Loading states
 const isLoading = ref(true)
 const isModalLoading = ref(false)
-const isVerifying = ref(false)
-const isStockEditable = ref(false)
 
 // Modal states
 const showKategoriModal = ref(false)
-const showPasswordModal = ref(false)
-const adminPassword = ref('')
 const newKategori = ref('')
 
 // Form and data
@@ -188,7 +141,6 @@ const form = ref({
   nama_produk: '',
   deskripsi: '',
   harga: '',
-  stok: '',
   kategori_id: '',
   satuan_id: ''
 })
@@ -199,37 +151,6 @@ const errorMessage = ref('')
 const kategoriList = ref([])
 const satuanList = ref([])
 
-// Password modal functions
-const closePasswordModal = () => {
-  showPasswordModal.value = false
-  adminPassword.value = ''
-  isVerifying.value = false
-}
-
-const verifyAdminPassword = async () => {
-  try {
-    isVerifying.value = true
-    const response = await axios.post('/verify-password', {
-      password: adminPassword.value
-    })
-    
-    if (response.data.success) {
-      isStockEditable.value = true
-      closePasswordModal()
-      successMessage.value = 'Akses edit stok diaktifkan'
-      setTimeout(() => successMessage.value = '', 3000)
-    } else {
-      closePasswordModal()
-      errorMessage.value = 'Password admin salah!'
-      setTimeout(() => errorMessage.value = '', 4000)
-    }
-  } catch (error) {
-    console.error('Verifikasi gagal:', error)
-    errorMessage.value = 'Terjadi kesalahan saat verifikasi'
-  } finally {
-    isVerifying.value = false
-  }
-}
 
 const validateForm = () => {
   errors.value = {}
@@ -242,9 +163,6 @@ const validateForm = () => {
   }
   if (!form.value.harga || form.value.harga <= 0) {
     errors.value.harga = 'Harga harus lebih dari 0.'
-  }
-  if (!form.value.stok || form.value.stok < 0) {
-    errors.value.stok = 'Stok tidak boleh kosong.'
   }
   if (!form.value.satuan_id) {
     errors.value.satuan_id = 'Pilih satuan terlebih dahulu.'
@@ -280,7 +198,7 @@ const getProduk = async () => {
       nama_produk: data.nama_produk,
       deskripsi: data.deskripsi || '',
       harga: data.harga,
-      stok: data.stok,
+
       kategori_id: data.kategori_id,
       satuan_id: data.satuan_id
     }

@@ -36,8 +36,8 @@
                       <th>Nama Produk</th>
                       <th>Kategori</th>
                       <th>Satuan</th>
-                      <th>Harga</th>
                       <th>Stok</th>
+                      <th>Harga</th>
                       <th>Aksi</th>
                     </tr>
                   </thead>
@@ -65,8 +65,16 @@
                       <td @click="goToEdit(produk.id)" style="cursor:pointer;">{{ produk.nama_produk }}</td>
                       <td @click="goToEdit(produk.id)" style="cursor:pointer;">{{ produk.kategori?.nama_kategori || '-' }}</td>
                       <td @click="goToEdit(produk.id)" style="cursor:pointer;">{{ produk.satuan?.nama_satuan || '-' }}</td>
+                      <td @click="goToEdit(produk.id)">
+                        <span :class="{
+                          'text-success': produk.stok_akhir > 10,
+                          'text-warning': produk.stok_akhir <= 10 && produk.stok_akhir > 0,
+                          'text-danger': produk.stok_akhir <= 0
+                        }">
+                          {{ produk.stok_akhir }}
+                        </span>
+                      </td>
                       <td @click="goToEdit(produk.id)" style="cursor:pointer;">Rp{{ Number(produk.harga).toLocaleString('id-ID') }}</td>
-                      <td @click="goToEdit(produk.id)" style="cursor:pointer;">{{ produk.stok }}</td>
                       <td>
                         <button class="btn btn-sm btn-danger" @click.stop="deleteItem(produk.id)">
                           <i class="fa fa-trash text-white"></i>
@@ -109,17 +117,11 @@
 
 
 <script setup>
-  import {
-    ref,
-    computed,
-    onMounted
-  } from 'vue'
-  import axios from 'axios'
+  import { ref, computed, onMounted } from 'vue'
   import debounce from 'lodash/debounce'
-  import {
-    useRouter
-  } from 'vue-router'
+  import { useRouter } from 'vue-router'
   import Swal from 'sweetalert2'
+  import api from '@/utils/axiosInstance' // pakai instance yang sudah ada
 
   const router = useRouter()
   const loading = ref(false)
@@ -131,76 +133,46 @@
   const searchQuery = ref('')
   const perPage = 10
 
-  // Buat instance Axios dengan base URL
-  const api = axios.create({
-    baseURL: 'http://localhost/login_api_lumen/public/api',
-  })
-
-  // Request interceptor → otomatis set token
-  api.interceptors.request.use(config => {
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`
-    }
-    return config
-  }, error => Promise.reject(error))
-
-  // Response interceptor → refresh token saat expired
-  api.interceptors.response.use(
-    response => response,
-    async error => {
-      const originalRequest = error.config
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true
-        try {
-          const token = localStorage.getItem('token')
-          const res = await api.post('/refresh', {}, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          })
-
-          const newToken = res.data.token
-          localStorage.setItem('token', newToken)
-
-          originalRequest.headers['Authorization'] = `Bearer ${newToken}`
-          return api(originalRequest)
-        } catch (refreshError) {
-          localStorage.removeItem('token')
-          router.push('/login')
-          return Promise.reject(refreshError)
-        }
-      }
-      return Promise.reject(error)
-    }
-  )
-
   // Ambil data dari API
-const fetchData = async (page = 1) => {
-  loading.value = true
-  try {
-    const res = await api.get('/produk', {
-      params: {
-        page,
-        per_page: perPage,
-        search: searchQuery.value
-      }
-    })
-    items.value = res.data.data
-    currentPage.value = res.data.current_page
-    lastPage.value = res.data.last_page
-  } catch (error) {
-    console.error('Gagal ambil data:', error)
-  } finally {
-    loading.value = false
+  const fetchData = async (page = 1) => {
+    loading.value = true
+    try {
+      // Ambil produk
+      const resProduk = await api.get('/produk', {
+        params: {
+          page,
+          per_page: perPage,
+          search: searchQuery.value
+        }
+      })
+
+      // Ambil stok
+      const resStok = await api.get('/stok-produk')
+      const stokArray = resStok.data.data || [] // pastikan array
+
+      // Gabungkan stok ke produk
+      items.value = resProduk.data.data.map(produk => {
+        const stokItem = stokArray.find(s => s.produk_id === produk.id)
+        return {
+          ...produk,
+          stok_akhir: stokItem ? stokItem.stok_akhir : 0,
+          stok_awal: stokItem ? stokItem.stok_awal : 0,
+          total_masuk: stokItem ? stokItem.total_masuk : 0,
+          total_keluar: stokItem ? stokItem.total_keluar : 0
+        }
+      })
+
+      currentPage.value = resProduk.data.current_page
+      lastPage.value = resProduk.data.last_page
+
+    } catch (error) {
+      console.error('Gagal ambil data:', error)
+    } finally {
+      loading.value = false
+    }
   }
-}
 
   const debouncedSearch = debounce(() => fetchData(1), 500)
-
-  onMounted(() => {
-    fetchData()
-  })
 
   const visiblePages = computed(() => {
     const pages = []
@@ -208,8 +180,9 @@ const fetchData = async (page = 1) => {
     const end = Math.min(currentPage.value + 1, lastPage.value)
     for (let i = start; i <= end; i++) pages.push(i)
     if (currentPage.value <= 2 && lastPage.value >= 3) return [1, 2, 3]
-    if (currentPage.value >= lastPage.value - 1) return [lastPage.value - 2, lastPage.value - 1, lastPage.value]
-      .filter(p => p > 0)
+    if (currentPage.value >= lastPage.value - 1) {
+      return [lastPage.value - 2, lastPage.value - 1, lastPage.value].filter(p => p > 0)
+    }
     return pages
   })
 
@@ -246,9 +219,7 @@ const fetchData = async (page = 1) => {
   }
 
   const confirmBulkDelete = async () => {
-    const {
-      value: password
-    } = await Swal.fire({
+    const { value: password } = await Swal.fire({
       title: 'Konfirmasi Hapus Massal',
       input: 'password',
       inputLabel: 'Masukkan password Anda',
@@ -273,10 +244,15 @@ const fetchData = async (page = 1) => {
       selectedItems.value = []
       Swal.fire('Sukses', 'Produk yang dipilih telah dihapus.', 'success')
     } catch (error) {
-      Swal.fire('Gagal', error.response ?.data ?.message || 'Terjadi kesalahan saat menghapus.', 'error')
+      Swal.fire('Gagal', error.response?.data?.message || 'Terjadi kesalahan saat menghapus.', 'error')
     }
   }
+
+  onMounted(() => {
+    fetchData()
+  })
 </script>
+
 
 
 <style>

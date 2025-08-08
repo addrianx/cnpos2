@@ -1,97 +1,159 @@
 <template>
   <nav class="sidebar sidebar-offcanvas" id="sidebar">
     <ul class="nav">
+
       <!-- Dashboard -->
-      <li class="nav-item">
-        <router-link class="nav-link" to="/dashboard">
+      <li class="nav-item" :class="{ active: route.path === '/dashboard' }">
+        <router-link to="/dashboard" class="nav-link">
           <i class="icon-grid menu-icon"></i>
           <span class="menu-title">Dashboard</span>
         </router-link>
       </li>
-      
+
       <!-- Produk -->
       <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="collapse" href="#produk" aria-expanded="false" aria-controls="produk">
+        <a
+          class="nav-link"
+          data-bs-toggle="collapse"
+          href="#produk"
+          :aria-expanded="isProdukActive"
+          aria-controls="produk"
+        >
           <i class="icon-layout menu-icon"></i>
           <span class="menu-title">Produk</span>
           <i class="menu-arrow"></i>
         </a>
-        <div class="collapse" id="produk">
+        <div :class="['collapse', { show: isProdukActive }]" id="produk">
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <router-link to="/dashboard/daftar-produk" class="nav-link">Daftar</router-link>
+              <router-link
+                to="/dashboard/daftar-produk"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/daftar-produk' }"
+              >Daftar</router-link>
             </li>
             <li class="nav-item">
-              <router-link to="/dashboard/tambah-produk" class="nav-link">Tambah</router-link>
+              <router-link
+                to="/dashboard/tambah-produk"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/tambah-produk' }"
+              >Tambah</router-link>
             </li>
             <li class="nav-item">
-              <router-link to="/dashboard/kategori-produk" class="nav-link">Kategori</router-link>
+              <router-link
+                to="/dashboard/kategori-produk"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/kategori-produk' }"
+              >Kategori</router-link>
             </li>
             <li class="nav-item">
-              <router-link to="/dashboard/stok-produk" class="nav-link">Stok</router-link>
+              <router-link
+                to="/dashboard/stok-produk"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/stok-produk' }"
+              >Stok</router-link>
             </li>
           </ul>
         </div>
       </li>
 
-      <!-- Form elements -->
+      <!-- Transaksi -->
       <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="collapse" href="#transaksi" aria-expanded="false" aria-controls="transaksi">
+        <a
+          class="nav-link"
+          data-bs-toggle="collapse"
+          href="#transaksi"
+          :aria-expanded="isTransaksiActive"
+          aria-controls="transaksi"
+        >
           <i class="icon-columns menu-icon"></i>
           <span class="menu-title">Transaksi</span>
           <i class="menu-arrow"></i>
         </a>
-        <div class="collapse" id="transaksi">
+        <div :class="['collapse', { show: isTransaksiActive }]" id="transaksi">
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <a class="nav-link" href="../../pages/forms/basic_elements.html">Transaksi Baru</a>
+              <!-- Kalau pake Vue Router, ganti ke router-link -->
+              <a class="nav-link" href="../../pages/forms/basic_elements.html">
+                Transaksi Baru
+              </a>
             </li>
           </ul>
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <a class="nav-link" href="../../pages/forms/basic_elements.html">Daftar Transaksi</a>
+              <a class="nav-link" href="../../pages/forms/basic_elements.html">
+                Daftar Transaksi
+              </a>
             </li>
           </ul>
         </div>
       </li>
 
-      <!-- Charts -->
+      <!-- Data Pelanggan -->
       <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="collapse" href="#pelanggan" aria-expanded="false" aria-controls="pelanggan">
+        <a
+          class="nav-link"
+          data-bs-toggle="collapse"
+          href="#pelanggan"
+          :aria-expanded="isPelangganActive"
+          aria-controls="pelanggan"
+        >
           <i class="icon-bar-graph menu-icon"></i>
           <span class="menu-title">Data Pelanggan</span>
           <i class="menu-arrow"></i>
         </a>
-        <div class="collapse" id="pelanggan">
+        <div :class="['collapse', { show: isPelangganActive }]" id="pelanggan">
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <a class="nav-link" href="../../pages/charts/chartjs.html">Daftar Data</a>
+              <router-link
+                to="/dashboard/daftar-customer"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/daftar-customer' }"
+              >
+                Daftar Customer
+              </router-link>
             </li>
           </ul>
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <a class="nav-link" href="../../pages/charts/chartjs.html">Tambah Data</a>
+              <router-link
+                to="/dashboard/add-customer"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/add-customer' }"
+              >
+                Tambah Customer
+              </router-link>
             </li>
           </ul>
         </div>
       </li>
 
-      <!-- Tables -->
+      <!-- Data Servis -->
       <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="collapse" href="#servis" aria-expanded="false" aria-controls="servis">
+        <a
+          class="nav-link"
+          data-bs-toggle="collapse"
+          href="#servis"
+          :aria-expanded="isServisActive"
+          aria-controls="servis"
+        >
           <i class="icon-grid-2 menu-icon"></i>
           <span class="menu-title">Data Servis</span>
           <i class="menu-arrow"></i>
         </a>
-        <div class="collapse" id="servis">
+        <div :class="['collapse', { show: isServisActive }]" id="servis">
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <a class="nav-link" href="../../pages/tables/basic-table.html">Daftar Servis</a>
+              <a class="nav-link" href="../../pages/tables/basic-table.html">
+                Daftar Servis
+              </a>
             </li>
           </ul>
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <a class="nav-link" href="../../pages/tables/basic-table.html">Tambah Servis</a>
+              <a class="nav-link" href="../../pages/tables/basic-table.html">
+                Tambah Servis
+              </a>
             </li>
           </ul>
         </div>
@@ -99,12 +161,18 @@
 
       <!-- Icons -->
       <li class="nav-item">
-        <a class="nav-link" data-bs-toggle="collapse" href="#icons" aria-expanded="false" aria-controls="icons">
+        <a
+          class="nav-link"
+          data-bs-toggle="collapse"
+          href="#icons"
+          :aria-expanded="isIconsActive"
+          aria-controls="icons"
+        >
           <i class="icon-contract menu-icon"></i>
           <span class="menu-title">Icons</span>
           <i class="menu-arrow"></i>
         </a>
-        <div class="collapse" id="icons">
+        <div :class="['collapse', { show: isIconsActive }]" id="icons">
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
               <a class="nav-link" href="../../pages/icons/mdi.html">Mdi icons</a>
@@ -118,59 +186,56 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 
+const route = useRoute()
 
-// Reusable checker function
-// const isMenuActive = (paths, exact = false) => {
-//   return computed(() =>
-//     paths.some((p) => exact ? route.path === p : route.path.startsWith(p))
-//   );
-// };
+// Group route paths untuk tiap sidebar collapse
+const produkPaths = [
+  '/dashboard/daftar-produk',
+  '/dashboard/tambah-produk',
+  '/dashboard/kategori-produk',
+  '/dashboard/stok-produk',
+]
 
-// ✅ Jika belum digunakan di template, lebih baik di-comment dulu
-// const isDashboardActive = isMenuActive(['/dashboard'], true);
-// const manajemenProdukRoutes = [
-//   '/dashboard/daftar-produk',
-//   '/dashboard/tambah-produk',
-//   '/dashboard/kategori-produk'
-// ];
-// const isManajemenProdukActive = isMenuActive(manajemenProdukRoutes);
+const transaksiPaths = [
+  // Kalau kamu pake Vue Router di sini, tambahkan route pathnya,
+  // kalau pake href biasa, skip atau ubah ke router-link dulu
+]
 
-// Fix Dropdown
-// const activeDropdown = ref('');
+const pelangganPaths = [
+  '/dashboard/daftar-customer',
+  '/dashboard/add-customer',
+]
 
-// Aktifkan dropdown berdasarkan route
-// const setInitialDropdown = () => {
-//   const path = route.path;
-//   if (path.startsWith('/dashboard/daftar-produk') || path.startsWith('/dashboard/tambah-produk') || path.startsWith('/dashboard/kategori-produk')) {
-//     activeDropdown.value = 'produk';
-//   } else if (path.includes('/forms')) {
-//     activeDropdown.value = 'form-elements';
-//   } else if (path.includes('/charts')) {
-//     activeDropdown.value = 'charts';
-//   } else if (path.includes('/tables')) {
-//     activeDropdown.value = 'tables';
-//   } else if (path.includes('/icons')) {
-//     activeDropdown.value = 'icons';
-//   } else if (path.includes('/samples')) {
-//     activeDropdown.value = 'auth';
-//   } else if (path.includes('/error')) {
-//     activeDropdown.value = 'error';
-//   } else {
-//     activeDropdown.value = ''; // default none
-//   }
-// };
+const servisPaths = [
+  // Sama, kalau pake router-link, masukkan di sini
+]
 
+const iconsPaths = [
+  // Sama, bisa dimasukkan route path jika ada
+]
 
-// Jalankan saat pertama kali
-// setInitialDropdown();
+// Computed untuk cek apakah route sekarang aktif di tiap grup
+const isProdukActive = computed(() =>
+  produkPaths.some(path => route.path.startsWith(path))
+)
 
-// Pantau perubahan route, dan update active dropdown
+const isTransaksiActive = computed(() =>
+  transaksiPaths.some(path => route.path.startsWith(path))
+)
 
+const isPelangganActive = computed(() =>
+  pelangganPaths.some(path => route.path.startsWith(path))
+)
 
-// Toggle fungsi buka tutup dropdown
-// const toggleDropdown = (dropdown) => {
-//   activeDropdown.value = activeDropdown.value === dropdown ? '' : dropdown;
-// };
+const isServisActive = computed(() =>
+  servisPaths.some(path => route.path.startsWith(path))
+)
+
+const isIconsActive = computed(() =>
+  iconsPaths.some(path => route.path.startsWith(path))
+)
 </script>
 

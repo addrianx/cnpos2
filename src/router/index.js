@@ -67,6 +67,8 @@ import KategoriProduk from '../views/products/KategoriProduk.vue'
 import StockProduk from '@/views/products/StockProduk.vue'
 import TambahStok from '@/views/products/TambahStok.vue'
 import EditStok from '@/views/products/EditStok.vue'
+import CustomersList from '@/views/Customers/CustomersList.vue'
+import CustomerAdd from '@/views/Customers/CustomerAdd.vue'
 
 const routes = [
   {
@@ -126,7 +128,19 @@ const routes = [
     name: 'Edit Stok',
     component: EditStok,
     meta: { layout: 'app', requiresAuth: true }
-  }
+  },
+  {
+    path: '/dashboard/daftar-customer',
+    name: 'Daftar Customer',
+    component: CustomersList,
+    meta: { layout: 'app', requiresAuth: true }
+  },
+  {
+    path: '/dashboard/add-customer',
+    name: 'Tambah Customer',
+    component: CustomerAdd,
+    meta: { layout: 'app', requiresAuth: true }
+  },
 ]
 
 const router = createRouter({
@@ -164,7 +178,7 @@ router.beforeEach(async (to, from, next) => {
       next();
     } catch (error) {
       // Error sudah dihandle oleh axios interceptor
-      return;
+      next(false);
     } finally {
       NProgress.done();
     }

@@ -122,17 +122,6 @@
                     <div class="invalid-feedback">{{ errors.satuan_id }}</div>
                   </div>
 
-                  <!-- Gambar Produk -->
-                  <div class="col-md-6">
-                    <label class="form-label">Gambar Produk</label>
-                    <input
-                      type="file"
-                      class="form-control"
-                      @change="handleFileUpload"
-                      accept="image/*"
-                    />
-                    <small class="text-muted">Format: JPG, PNG (Maks. 2MB)</small>
-                  </div>
                 </div>
 
                 <!-- Submit -->
@@ -200,7 +189,7 @@ const form = ref({
   nama_produk: '',
   deskripsi: '',
   harga: '',
-  stok: '',
+  stok: 0,
   kategori_id: '',
   satuan_id: '',
   gambar: null
@@ -215,19 +204,6 @@ const kategoriList = ref([])
 const satuanList = ref([])
 const token = localStorage.getItem('token')
 
-// Handle file upload
-const handleFileUpload = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    // Validasi ukuran file (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      errorMessage.value = 'Ukuran file terlalu besar (Maks. 2MB)'
-      event.target.value = '' // Reset input file
-      return
-    }
-    form.value.gambar = file
-  }
-}
 
 // Validasi manual
 const validateForm = () => {
@@ -330,20 +306,33 @@ const submitForm = async () => {
     setTimeout(() => {
       router.push('/produk')
     }, 2000)
-  } catch (err) {
-    console.error('Gagal menyimpan produk:', err)
-    if (err.response?.status === 422) {
-      errors.value = err.response.data.errors
-      errorMessage.value = 'Silakan periksa kembali form yang Anda isi.'
-    } else if (err.response?.status === 401) {
-      errorMessage.value = 'Sesi Anda telah berakhir. Silakan login kembali.'
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
-    } else {
-      errorMessage.value = 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.'
+} catch (err) {
+  console.error('Gagal menyimpan produk:', err);
+
+  const resp = err.response;
+  if (resp) {
+    console.error('Response status:', resp.status);
+    console.error('Response data:', resp.data);
+
+    if (resp.status === 422) {
+      errors.value = resp.data.errors || {};
+      errorMessage.value = resp.data.message || 'Silakan periksa kembali form yang Anda isi.';
+      return;
     }
+
+    if (resp.data?.message) {
+      errorMessage.value = resp.data.message;
+    } else if (resp.data?.error) {
+      // kadang backend mengirim key "error"
+      errorMessage.value = resp.data.error;
+    } else {
+      errorMessage.value = 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.';
+    }
+  } else {
+    // tidak ada response (network error)
+    errorMessage.value = 'Gagal terhubung ke server. Periksa koneksi atau CORS.';
   }
+}
 }
 
 const tambahKategori = async () => {

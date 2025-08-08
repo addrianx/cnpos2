@@ -176,6 +176,7 @@ export default {
       try {
         const response = await axiosInstance.get('/stok-produk');
         this.products = response.data.data || [];
+        console.log(this.products)
       } catch (error) {
         console.error('Gagal memuat data stok produk:', error);
       }
