@@ -2,7 +2,7 @@
 import axios from 'axios'
 import router from '@/router'
 
-const baseURL = 'http://localhost/login_api_lumen/public/api'
+const baseURL = process.env.VUE_APP_API_BASE_URL || window.location.origin + '/api'
 const axiosInstance = axios.create({ baseURL })
 
 // Interceptor request
