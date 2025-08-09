@@ -69,6 +69,9 @@ import TambahStok from '@/views/products/TambahStok.vue'
 import EditStok from '@/views/products/EditStok.vue'
 import CustomersList from '@/views/Customers/CustomersList.vue'
 import CustomerAdd from '@/views/Customers/CustomerAdd.vue'
+import ListTransaksi from '@/views/transaction/ListTransaksi.vue'
+import InvoiceTransaksi from '@/views/transaction/InvoiceTransaksi.vue'
+import CreateTransaction from '@/views/transaction/CreateTransaction.vue'
 
 const routes = [
   {
@@ -141,6 +144,25 @@ const routes = [
     component: CustomerAdd,
     meta: { layout: 'app', requiresAuth: true }
   },
+  // TRANSAKSI
+  {
+    path: '/dashboard/transaksi',
+    name: 'Daftar Transaksi',
+    component: ListTransaksi,
+    meta: { layout: 'app', requiresAuth: true }
+  }, 
+  {
+    path: '/dashboard/add-transaksi',
+    name: 'Buat Transaksi',
+    component: CreateTransaction,
+    meta: { layout: 'app', requiresAuth: true }
+  }, 
+  {
+    path: '/dashboard/invoice',
+    name: 'Invoice Transaksi',
+    component: InvoiceTransaksi,
+    meta: { layout: 'app', requiresAuth: true }
+  }, 
 ]
 
 const router = createRouter({

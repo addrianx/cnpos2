@@ -74,16 +74,21 @@
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
               <!-- Kalau pake Vue Router, ganti ke router-link -->
-              <a class="nav-link" href="../../pages/forms/basic_elements.html">
-                Transaksi Baru
-              </a>
+              <router-link
+                to="/dashboard/transaksi"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/transaksi' }"
+              >Daftar Transaksi</router-link>
             </li>
           </ul>
           <ul class="nav flex-column sub-menu">
             <li class="nav-item">
-              <a class="nav-link" href="../../pages/forms/basic_elements.html">
-                Daftar Transaksi
-              </a>
+              <!-- Kalau pake Vue Router, ganti ke router-link -->
+              <router-link
+                to="/dashboard/add-transaksi"
+                class="nav-link"
+                :class="{ active: route.path === '/dashboard/add-transaksi' }"
+              >Transaksi Baru</router-link>
             </li>
           </ul>
         </div>

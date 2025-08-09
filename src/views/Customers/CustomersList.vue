@@ -142,10 +142,15 @@ const fetchData = async (page = 1) => {
         search: searchQuery.value
       }
     })
-    items.value = res.data
+    
+    // Perbaikan di sini: Tambahkan .data untuk mengakses array customer
+    items.value = res.data.data.data
     console.log(items.value)
-    currentPage.value = res.data.current_page
-    lastPage.value = res.data.last_page
+    
+    // Sesuaikan juga untuk pagination
+    currentPage.value = res.data.data.current_page
+    lastPage.value = res.data.data.last_page
+    
   } catch (error) {
     console.error('Gagal ambil data:', error)
   } finally {
