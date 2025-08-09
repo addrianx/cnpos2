@@ -87,6 +87,7 @@
                   @click="addToCart(product)"
                 >
                   <h6 class="mb-2">{{ product.name }}</h6>
+                  <p class="text-muted mb-0">Stok : {{ product.stock }}</p>
                   <p class="text-muted mb-0">{{ formatRupiah(product.price) }}</p>
                 </div>
               </div>
@@ -123,64 +124,16 @@
                 <span>Subtotal</span>
                 <strong>{{ formatRupiah(totalPrice) }}</strong>
               </div>
-                <!-- Form diskon -->
-                <div class="form-group mt-3">
-                <label for="discount">Diskon</label>
-                <div class="d-flex">
-                    <input
-                    id="discount"
-                    type="number"
-                    class="form-control"
-                    v-model="discount"
-                    :disabled="!isDiscountUnlocked"
-                    placeholder="Masukkan diskon (%)"
-                    />
-                    <button
-                    class="btn btn-warning ms-2"
-                    v-if="!isDiscountUnlocked"
-                    @click="showDiscountAuth = true"
-                    >
-                    🔒 Buka
-                    </button>
-                    <button
-                    class="btn btn-secondary ms-2"
-                    v-else
-                    @click="lockDiscount"
-                    >
-                    🔒 Kunci
-                    </button>
-                </div>
-                </div>
-
-                <!-- Modal Password -->
-                <div
-                class="modal fade"
-                tabindex="-1"
-                :class="{ show: showDiscountAuth }"
-                style="display: block;"
-                v-if="showDiscountAuth"
-                >
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Masukkan Password</h5>
-                        <button type="button" class="btn-close" @click="showDiscountAuth = false"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input
-                        type="password"
-                        class="form-control"
-                        v-model="discountPassword"
-                        placeholder="Password"
-                        />
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" @click="showDiscountAuth = false">Batal</button>
-                        <button class="btn btn-primary" @click="unlockDiscount">OK</button>
-                    </div>
-                    </div>
-                </div>
-                </div>
+            <div class="d-flex justify-content-between align-items-center">
+            <span>Diskon</span>
+            <input
+                type="number"
+                v-model.number="discount"
+                class="form-control form-control-sm w-50 text-end"
+                min="0"
+                :max="totalPrice"
+            />
+            </div>
               <hr />
               <div class="d-flex justify-content-between">
                 <span>Total</span>
@@ -240,8 +193,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted  } from 'vue';
+import axiosInstance from '@/utils/axiosInstance'
+import Swal from 'sweetalert2'
 
+const products = ref([])
+const cart = ref([])
+const loading = ref(false)
+const error = ref(null)
 const searchQuery = ref('');
 const searchCustomer = ref('');
 const showCustomerDropdown = ref(false);
@@ -249,11 +208,7 @@ const selectedCustomer = ref(null);
 const showAddCustomerModal = ref(false);
 const discount = ref(0);
 
-const customers = ref([
-  { id: 1, name: 'Adi Nugraha', phone: '08123456789', address: 'Bandung' },
-  { id: 2, name: 'Budi Santoso', phone: '08198765432', address: 'Jakarta' },
-  { id: 3, name: 'Citra Dewi', phone: '08211222333', address: 'Surabaya' },
-]);
+const customers = ref([]) // kosong dulu, nanti diisi dari API
 
 const filteredCustomers = ref([]);
 
@@ -283,31 +238,102 @@ const clearCustomerSearch = () => {
 
 const newCustomer = ref({ name: '', phone: '', address: '' });
 
-const saveNewCustomer = () => {
-  if (!newCustomer.value.name) return alert("Nama wajib diisi!");
-  const id = customers.value.length + 1;
-  const cust = { id, ...newCustomer.value };
-  customers.value.push(cust);
-  selectedCustomer.value = cust;
-  searchCustomer.value = cust.name;
-  newCustomer.value = { name: '', phone: '', address: '' };
-  showAddCustomerModal.value = false;
+const saveNewCustomer = async () => {
+  if (!newCustomer.value.name) {
+    Swal.fire('Error', 'Nama wajib diisi!', 'warning');
+    return;
+  }
+
+  try {
+    loading.value = true;
+    const payload = {
+      name: newCustomer.value.name,
+      phone: newCustomer.value.phone,
+      address: newCustomer.value.address,
+    };
+
+    const res = await axiosInstance.post('/customer', payload);
+
+    if (res.data?.status === 'success') {
+      Swal.fire('Berhasil', 'Pelanggan baru berhasil ditambahkan.', 'success');
+
+      // Ambil ulang list pelanggan dari API agar data terbaru
+      await fetchCustomers();
+
+      // Pilih customer yang baru ditambahkan, asumsikan backend mengembalikan data customer baru di res.data.data
+      if (res.data.data) {
+        selectedCustomer.value = {
+          id: res.data.data.id,
+          name: res.data.data.name,
+          phone: res.data.data.phone,
+          address: res.data.data.address,
+        };
+        searchCustomer.value = res.data.data.name;
+      }
+
+      // Reset form dan tutup modal
+      newCustomer.value = { name: '', phone: '', address: '' };
+      showAddCustomerModal.value = false;
+    } else {
+      Swal.fire('Error', 'Gagal menambahkan pelanggan baru.', 'error');
+    }
+  } catch (err) {
+    Swal.fire('Error', err.message || 'Terjadi kesalahan saat menambah pelanggan.', 'error');
+  } finally {
+    loading.value = false;
+  }
 };
 
-const products = ref([
-  { id: 1, name: 'Kopi Susu', price: 25000 },
-  { id: 2, name: 'Roti Bakar', price: 15000 },
-  { id: 3, name: 'Teh Tarik', price: 20000 },
-]);
-
-const cart = ref([]);
+// Fetch Customers from API
+const fetchCustomers = async () => {
+  try {
+    const res = await axiosInstance.get('/customers');
+    if (res.data?.status === 'success' && Array.isArray(res.data.data?.data)) {
+      customers.value = res.data.data.data.map(item => ({
+        id: item.id,
+        name: item.name,
+        phone: item.phone,
+        address: item.address,
+      }));
+    } else {
+      Swal.fire('Error', 'Data pelanggan tidak valid', 'error');
+    }
+  } catch (err) {
+    Swal.fire('Error', err.message || 'Gagal memuat pelanggan', 'error');
+  }
+};
 
 const filteredProducts = computed(() => {
-  if (!searchQuery.value) return products.value;
+  if (!searchQuery.value) return products.value
   return products.value.filter(p =>
     p.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
-});
+  )
+})
+
+// Fetch Products from API
+const fetchProducts = async () => {
+  loading.value = true
+  error.value = null
+  try {
+    const res = await axiosInstance.get('/stok-produk')
+    if (res.data?.status === 'success' && Array.isArray(res.data.data)) {
+      products.value = res.data.data.map(item => ({
+        id: item.produk_id,
+        name: item.nama_produk,
+        price: item.harga || 0, // kalau ada harga
+        category: item.kategori,
+        unit: item.satuan,
+        stock: item.stok_akhir
+      }))
+    } else {
+      error.value = 'Data produk tidak valid'
+    }
+  } catch (err) {
+    error.value = err.message || 'Gagal memuat produk'
+  } finally {
+    loading.value = false
+  }
+}
 
 const totalPrice = computed(() =>
   cart.value.reduce((sum, item) => sum + (item.price * item.quantity), 0)
@@ -316,13 +342,42 @@ const totalPrice = computed(() =>
 const addToCart = (product) => {
   const existing = cart.value.find(item => item.id === product.id);
   if (existing) {
-    existing.quantity++;
+    if (existing.quantity < product.stock) {
+      existing.quantity++;
+    } else {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Stok terbatas',
+        text: `Stok ${product.name} hanya tersisa ${product.stock} item.`,
+      });
+    }
   } else {
-    cart.value.push({ ...product, quantity: 1 });
+    if (product.stock > 0) {
+      cart.value.push({ ...product, quantity: 1 });
+    } else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Stok kosong',
+        text: `Stok ${product.name} kosong.`,
+      });
+    }
   }
 };
 
-const increaseQuantity = (item) => item.quantity++;
+const increaseQuantity = (item) => {
+  const product = products.value.find(p => p.id === item.id);
+  if (!product) return;
+  if (item.quantity < product.stock) {
+    item.quantity++;
+  } else {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Stok terbatas',
+      text: `Stok ${product.name} hanya tersisa ${product.stock} item.`,
+    });
+  }
+};
+
 const decreaseQuantity = (item) => {
   if (item.quantity > 1) {
     item.quantity--;
@@ -333,7 +388,7 @@ const decreaseQuantity = (item) => {
 
 const grandTotal = computed(() => {
   let total = totalPrice.value - discount.value;
-  return total < 0 ? 0 : total; // jaga-jaga kalau diskon lebih besar dari subtotal
+  return total < 0 ? 0 : total;
 });
 
 const formatRupiah = (num) =>
@@ -343,25 +398,11 @@ const processTransaction = () => {
   console.log("Proses pembayaran:", selectedCustomer.value, cart.value, totalPrice.value);
 };
 
-// Script setup
-const isDiscountUnlocked = ref(false)
-const showDiscountAuth = ref(false)
-const discountPassword = ref('')
+onMounted(() => {
+  fetchProducts()
+  fetchCustomers()
+})
 
-const unlockDiscount = () => {
-  if (discountPassword.value === '1234') { // ganti dengan password rahasia
-    isDiscountUnlocked.value = true
-    showDiscountAuth.value = false
-    discountPassword.value = ''
-  } else {
-    alert('Password salah!')
-  }
-}
-
-const lockDiscount = () => {
-  isDiscountUnlocked.value = false
-  discount.value = 0
-}
 </script>
 
 
