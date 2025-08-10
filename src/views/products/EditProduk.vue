@@ -55,14 +55,7 @@
                           {{ kategori.nama_kategori }}
                         </option>
                       </select>
-                      <button
-                        type="button"
-                        class="btn btn-primary btn-sm"
-                        @click="showKategoriModal = true"
-                        :disabled="isLoading"
-                      >
-                        + Tambah
-                      </button>
+                      <button type="button" class="btn btn-primary" @click="tambahKategori">Tambah Kategori</button>
                     </div>
                     <div class="invalid-feedback">{{ errors.kategori_id }}</div>
                   </div>
@@ -136,33 +129,14 @@
     </div>
 
     <!-- Dynamic Modal for Kategori -->
-    <DynamicModal
-      :show="showKategoriModal"
-      title="Tambah Kategori"
-      :loading="isModalLoading"
-      loading-text="Menyimpan..."
-      @close="showKategoriModal = false"
-      @confirm="tambahKategori"
-      :disable-confirm="!newKategori.trim()"
-    >
-      <template #body>
-        <input
-          v-model="newKategori"
-          type="text"
-          class="form-control"
-          placeholder="Nama kategori baru"
-          :disabled="isModalLoading"
-        />
-      </template>
-    </DynamicModal>
   </div>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from '@/utils/axiosInstance'
-import DynamicModal from '@/components/DynamicModal.vue'
+import axiosInstance from '@/utils/axiosInstance'
+import Swal from 'sweetalert2';
 
 const route = useRoute()
 const produkId = route.params.id
@@ -175,11 +149,7 @@ const hargaModalDisplay = ref('') // harga modal yang tampil dengan titik
 
 // Loading & modal states
 const isLoading = ref(true)
-const isModalLoading = ref(false)
 
-// Modal states
-const showKategoriModal = ref(false)
-const newKategori = ref('')
 
 // Form dan data
 const form = ref({
@@ -196,6 +166,7 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const kategoriList = ref([])
 const satuanList = ref([])
+
 
 // Watch hargaRaw supaya update hargaDisplay dengan format ribuan
 watch(hargaRaw, (newVal) => {
@@ -263,7 +234,7 @@ const validateForm = () => {
 // API get kategori
 const getKategori = async () => {
   try {
-    const res = await axios.get('/kategori-produk/all')
+    const res = await axiosInstance.get('/kategori-produk/all')
     kategoriList.value = res.data.data
   } catch (err) {
     console.error('Gagal memuat kategori:', err)
@@ -273,7 +244,7 @@ const getKategori = async () => {
 // API get satuan
 const getSatuan = async () => {
   try {
-    const res = await axios.get('/satuan-produk')
+    const res = await axiosInstance.get('/satuan-produk')
     satuanList.value = res.data.data
   } catch (err) {
     console.error('Gagal memuat satuan:', err)
@@ -283,11 +254,11 @@ const getSatuan = async () => {
 // API get produk by id
 const getProduk = async () => {
   try {
-    const res = await axios.get(`/produk/${produkId}`)
+    const res = await axiosInstance.get(`/produk/${produkId}`)
     const data = res.data
-    // Buat harga jadi integer bulat (buang desimal)
     const hargaBulat = data.harga ? Math.floor(Number(data.harga)) : 0
     const hargaModalBulat = data.harga_modal ? Math.floor(Number(data.harga_modal)) : 0
+
     form.value = {
       nama_produk: data.nama_produk,
       deskripsi: data.deskripsi || '',
@@ -297,31 +268,18 @@ const getProduk = async () => {
       satuan_id: data.satuan_id
     }
 
-    // Set nilai hargaRaw dan hargaModalRaw dari data asli tanpa titik
     hargaRaw.value = data.harga?.toString() || ''
     hargaModalRaw.value = data.harga_modal?.toString() || ''
-
-    // Reset error message
     errorMessage.value = ''
   } catch (err) {
     console.error('[getProduk Error]', err.response?.data || err.message)
-
     if (err.response) {
       switch (err.response.status) {
-        case 401:
-          errorMessage.value = 'Sesi telah berakhir. Silakan login kembali.'
-          break
-        case 403:
-          errorMessage.value = 'Anda tidak memiliki izin untuk mengakses data ini.'
-          break
-        case 404:
-          errorMessage.value = 'Data produk tidak ditemukan.'
-          break
-        case 500:
-          errorMessage.value = 'Terjadi kesalahan server. Silakan coba lagi nanti.'
-          break
-        default:
-          errorMessage.value = 'Gagal memuat data produk. Silakan coba lagi.'
+        case 401: errorMessage.value = 'Sesi telah berakhir. Silakan login kembali.'; break
+        case 403: errorMessage.value = 'Anda tidak memiliki izin untuk mengakses data ini.'; break
+        case 404: errorMessage.value = 'Data produk tidak ditemukan.'; break
+        case 500: errorMessage.value = 'Terjadi kesalahan server. Silakan coba lagi nanti.'; break
+        default:  errorMessage.value = 'Gagal memuat data produk. Silakan coba lagi.'
       }
     } else if (err.request) {
       errorMessage.value = 'Tidak ada respon dari server. Periksa koneksi internet Anda.'
@@ -329,23 +287,21 @@ const getProduk = async () => {
       errorMessage.value = 'Terjadi kesalahan saat memuat data produk.'
     }
 
-    setTimeout(() => {
-      errorMessage.value = ''
-    }, 5000)
+    setTimeout(() => errorMessage.value = '', 5000)
   }
 }
+
 
 // Submit form update produk
 const submitForm = async () => {
   if (!validateForm()) return
 
-  // Bersihkan titik sebelum kirim ke server
   form.value.harga = cleanDotPrice(hargaRaw.value)
   form.value.harga_modal = cleanDotPrice(hargaModalRaw.value)
 
   try {
     isLoading.value = true
-    await axios.put(`/produk/${produkId}`, form.value)
+    await axiosInstance.put(`/produk/${produkId}`, form.value)
     successMessage.value = '✅ Produk berhasil diperbarui!'
     errorMessage.value = ''
   } catch (err) {
@@ -358,28 +314,53 @@ const submitForm = async () => {
 
 // Tambah kategori baru
 const tambahKategori = async () => {
-  if (!newKategori.value.trim()) return alert('Nama kategori tidak boleh kosong.')
+  const { value: namaKategori } = await Swal.fire({
+    title: 'Tambah Kategori',
+    input: 'text',
+    inputLabel: 'Nama Kategori',
+    inputPlaceholder: 'Masukkan nama kategori',
+    showCancelButton: true,
+    confirmButtonText: 'Simpan',
+    cancelButtonText: 'Batal',
+    inputValidator: (value) => {
+      if (!value || !value.trim()) {
+        return 'Nama kategori tidak boleh kosong!';
+      }
+    }
+  });
+
+  if (!namaKategori) return; // Jika user batal
 
   try {
-    const res = await axios.post('/kategori-produk', {
-      nama_kategori: newKategori.value
-    })
+    const res = await axiosInstance.post('/kategori-produk', {
+      nama_kategori: namaKategori.trim()
+    });
 
-    kategoriList.value.push(res.data)
-    form.value.kategori_id = res.data.id
-    newKategori.value = ''
-    showKategoriModal.value = false
+    kategoriList.value.push(res.data);
+    form.value.kategori_id = res.data.id;
 
-    alert('✅ Kategori berhasil ditambahkan!')
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil',
+      text: 'Kategori berhasil ditambahkan!'
+    });
   } catch (err) {
-    console.error(err)
+    console.error(err);
     if (err.response?.data?.errors?.nama_kategori) {
-      alert('❌ ' + err.response.data.errors.nama_kategori[0])
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: err.response.data.errors.nama_kategori[0]
+      });
     } else {
-      alert('❌ Gagal menambahkan kategori.')
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: 'Terjadi kesalahan saat menambahkan kategori.'
+      });
     }
   }
-}
+};
 
 // Lifecycle hooks
 onMounted(async () => {

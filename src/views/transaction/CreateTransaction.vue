@@ -126,13 +126,13 @@
               </div>
             <div class="d-flex justify-content-between align-items-center">
             <span>Diskon</span>
-            <input
-                type="number"
-                v-model.number="discount"
-                class="form-control form-control-sm w-50 text-end"
-                min="0"
-                :max="totalPrice"
-            />
+              <input 
+                type="number" 
+                class="form-control" 
+                v-model="diskon" 
+                :readonly="isDiskonLocked"
+                @click="isDiskonLocked ? requestPassword() : null"
+              />
             </div>
               <hr />
               <div class="d-flex justify-content-between">
@@ -206,7 +206,34 @@ const searchCustomer = ref('');
 const showCustomerDropdown = ref(false);
 const selectedCustomer = ref(null);
 const showAddCustomerModal = ref(false);
-const discount = ref(0);
+const discount = ref(0)
+const diskon = ref('') // -->hasil dari sweet alert
+const isDiskonLocked = ref(true)
+const correctPassword = '12345' // ini contoh, nanti ambil dari backend kalau mau lebih aman
+
+const requestPassword = async () => {
+  const { value: password } = await Swal.fire({
+    title: 'Masukkan Password',
+    input: 'password',
+    inputLabel: 'Password diperlukan untuk mengubah diskon',
+    inputPlaceholder: 'Password',
+    showCancelButton: true,
+    confirmButtonText: 'OK',
+    cancelButtonText: 'Batal',
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Password wajib diisi!'
+      }
+    }
+  })
+
+  if (password === correctPassword) {
+    isDiskonLocked.value = false
+    Swal.fire('Berhasil', 'Diskon bisa diubah', 'success')
+  } else if (password) {
+    Swal.fire('Gagal', 'Password salah', 'error')
+  }
+}
 
 const customers = ref([]) // kosong dulu, nanti diisi dari API
 
@@ -387,9 +414,9 @@ const decreaseQuantity = (item) => {
 };
 
 const grandTotal = computed(() => {
-  let total = totalPrice.value - discount.value;
-  return total < 0 ? 0 : total;
-});
+  let total = totalPrice.value - discount.value
+  return total < 0 ? 0 : total
+})
 
 const formatRupiah = (num) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
