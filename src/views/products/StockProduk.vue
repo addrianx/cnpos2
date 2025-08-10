@@ -18,17 +18,34 @@
 
       <!-- Card Utama -->
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">Daftar Stok Produk</h5>
-          <div>
-            <button class="btn btn-sm btn-primary me-2">
-              <i class="fa fa-file-export me-1"></i> Export
-            </button>
-            <router-link to="/dashboard/tambah-stok" class="btn btn-sm btn-success">
-              <i class="fa fa-plus me-1"></i> Tambah Stok
-            </router-link>
+        <div class="card-header bg-light">
+          <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <!-- Judul -->
+            <h5 class="mb-0">Daftar Stok Produk</h5>
+
+            <!-- Dropdown jumlah data -->
+            <div class="d-flex align-items-center my-2 my-md-0">
+              <label class="me-2 mb-0">Tampilkan</label>
+              <select v-model="perPage" class="form-select form-select-sm me-2" style="width: 70px;">
+                <option :value="10">10</option>
+                <option :value="50">50</option>
+                <option :value="100">100</option>
+              </select>
+              <span class="mb-0">data</span>
+            </div>
+
+            <!-- Tombol aksi -->
+            <div class="d-flex flex-wrap gap-2 mt-2 mt-md-0">
+              <button class="btn btn-sm btn-primary">
+                <i class="fa fa-file-export me-1"></i> Export
+              </button>
+              <router-link to="/dashboard/tambah-stok" class="btn btn-sm btn-success">
+                <i class="fa fa-plus me-1"></i> Tambah Stok
+              </router-link>
+            </div>
           </div>
         </div>
+
 
         <div class="card-body">
           <!-- Tabel Stok -->
@@ -148,8 +165,8 @@ export default {
     return {
       searchQuery: '',
       products: [],
-          currentPage: 1,
-    perPage: 5, // jumlah item per halaman
+      currentPage: 1,
+      perPage: 10, // jumlah item per halaman
     };
   },
 
@@ -212,7 +229,13 @@ export default {
 
   mounted() {
     this.loadStokProduk();
+  },
+
+  watch: {
+  perPage() {
+    this.currentPage = 1;
   }
+}
 };
 </script>
 
