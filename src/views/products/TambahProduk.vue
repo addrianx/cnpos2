@@ -66,7 +66,24 @@
 
                   <!-- Harga -->
                   <div class="col-md-6">
-                    <label class="form-label">Harga <span class="text-danger">*</span></label>
+                    <label class="form-label">Harga Modal<span class="text-danger">*</span></label>
+                    <div class="input-group">
+                      <span class="input-group-text">Rp</span>
+                      <input
+                        v-model="form.harga_modal"
+                        type="number"
+                        class="form-control"
+                        :class="{ 'is-invalid': errors.harga_modal }"
+                        placeholder="Masukkan harga modal"
+                        min="0"
+                      />
+                    </div>
+                    <div class="invalid-feedback">{{ errors.harga_modal }}</div>
+                  </div>
+
+                  <!-- Harga -->
+                  <div class="col-md-6">
+                    <label class="form-label">Harga Jual<span class="text-danger">*</span></label>
                     <div class="input-group">
                       <span class="input-group-text">Rp</span>
                       <input
@@ -95,17 +112,6 @@
                     <div class="invalid-feedback">{{ errors.stok }}</div>
                   </div>
 
-                  <!-- Deskripsi -->
-                  <div class="col-12">
-                    <label class="form-label">Deskripsi</label>
-                    <textarea
-                      v-model="form.deskripsi"
-                      class="form-control"
-                      rows="3"
-                      placeholder="Masukkan deskripsi produk"
-                    ></textarea>
-                  </div>
-
                   <!-- Satuan -->
                   <div class="col-md-6">
                     <label class="form-label">Satuan <span class="text-danger">*</span></label>
@@ -120,6 +126,17 @@
                       </option>
                     </select>
                     <div class="invalid-feedback">{{ errors.satuan_id }}</div>
+                  </div>
+
+                  <!-- Deskripsi -->
+                  <div class="col-12">
+                    <label class="form-label">Deskripsi</label>
+                    <textarea
+                      v-model="form.deskripsi"
+                      class="form-control"
+                      rows="3"
+                      placeholder="Masukkan deskripsi produk"
+                    ></textarea>
                   </div>
 
                 </div>
@@ -179,22 +196,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+// Import axiosInstance, bukan axios biasa
+import axiosInstance from '@/utils/axiosInstance.js' 
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
-// State form dan validasi
-const form = ref({
-  nama_produk: '',
-  deskripsi: '',
-  harga: '',
-  stok: 0,
-  kategori_id: '',
-  satuan_id: '',
-  gambar: null
-})
-
 const showKategoriModal = ref(false)
 const newKategori = ref('')
 const errors = ref({})
@@ -202,10 +208,19 @@ const successMessage = ref('')
 const errorMessage = ref('')
 const kategoriList = ref([])
 const satuanList = ref([])
-const token = localStorage.getItem('token')
 
+const form = ref({
+  nama_produk: '',
+  deskripsi: '',
+  harga: '',
+  harga_modal: '',
+  stok: 0,
+  kategori_id: '',
+  satuan_id: '',
+  gambar: null
+})
 
-// Validasi manual
+// VALIDASI FORM SAMA
 const validateForm = () => {
   errors.value = {}
 
@@ -217,6 +232,12 @@ const validateForm = () => {
 
   if (!form.value.kategori_id) {
     errors.value.kategori_id = 'Pilih kategori terlebih dahulu.'
+  }
+
+  if (form.value.harga_modal === '' || form.value.harga_modal === null) {
+    errors.value.harga_modal = 'Harga modal wajib diisi.'
+  } else if (isNaN(form.value.harga_modal) || Number(form.value.harga_modal) <= 0) {
+    errors.value.harga_modal = 'Harga modal harus berupa angka lebih dari 0.'
   }
 
   if (!form.value.harga) {
@@ -238,14 +259,13 @@ const validateForm = () => {
   return Object.keys(errors.value).length === 0
 }
 
+
+
 const getKategori = async () => {
   try {
-    const res = await axios.get('http://localhost/login_api_lumen/public/api/kategori-produk/all', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
+    const res = await axiosInstance.get('/kategori-produk/all')
     kategoriList.value = res.data.data
+    console.log(kategoriList.value)
   } catch (err) {
     console.error('Gagal memuat kategori:', err)
     if (err.response?.status === 401) {
@@ -257,13 +277,11 @@ const getKategori = async () => {
   }
 }
 
+
+
 const getSatuan = async () => {
   try {
-    const res = await axios.get('http://localhost/login_api_lumen/public/api/satuan-produk', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
+    const res = await axiosInstance.get('/satuan-produk')
     satuanList.value = res.data.data
   } catch (err) {
     console.error('Gagal memuat satuan:', err)
@@ -276,6 +294,8 @@ const getSatuan = async () => {
   }
 }
 
+
+
 const submitForm = async () => {
   if (!validateForm()) return
 
@@ -283,17 +303,14 @@ const submitForm = async () => {
     const formData = new FormData()
     formData.append('nama_produk', form.value.nama_produk)
     formData.append('deskripsi', form.value.deskripsi)
+    formData.append('harga_modal', form.value.harga_modal)
     formData.append('harga', form.value.harga)
     formData.append('stok', form.value.stok)
     formData.append('kategori_id', form.value.kategori_id)
     formData.append('satuan_id', form.value.satuan_id)
-    if (form.value.gambar) {
-      formData.append('gambar', form.value.gambar)
-    }
 
-    await axios.post('http://localhost/login_api_lumen/public/api/produk', formData, {
+    await axiosInstance.post('/produk', formData, {
       headers: {
-        Authorization: `Bearer ${token}`,
         'Content-Type': 'multipart/form-data'
       }
     })
@@ -301,39 +318,38 @@ const submitForm = async () => {
     successMessage.value = 'Produk berhasil ditambahkan!'
     errorMessage.value = ''
     resetForm()
-    
-    // Redirect setelah 2 detik
+
     setTimeout(() => {
       router.push('/produk')
     }, 2000)
-} catch (err) {
-  console.error('Gagal menyimpan produk:', err);
+  } catch (err) {
+    console.error('Gagal menyimpan produk:', err);
 
-  const resp = err.response;
-  if (resp) {
-    console.error('Response status:', resp.status);
-    console.error('Response data:', resp.data);
+    const resp = err.response;
+    if (resp) {
+      console.error('Response status:', resp.status);
+      console.error('Response data:', resp.data);
 
-    if (resp.status === 422) {
-      errors.value = resp.data.errors || {};
-      errorMessage.value = resp.data.message || 'Silakan periksa kembali form yang Anda isi.';
-      return;
-    }
+      if (resp.status === 422) {
+        errors.value = resp.data.errors || {};
+        errorMessage.value = resp.data.message || 'Silakan periksa kembali form yang Anda isi.';
+        return;
+      }
 
-    if (resp.data?.message) {
-      errorMessage.value = resp.data.message;
-    } else if (resp.data?.error) {
-      // kadang backend mengirim key "error"
-      errorMessage.value = resp.data.error;
+      if (resp.data?.message) {
+        errorMessage.value = resp.data.message;
+      } else if (resp.data?.error) {
+        errorMessage.value = resp.data.error;
+      } else {
+        errorMessage.value = 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.';
+      }
     } else {
-      errorMessage.value = 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.';
+      errorMessage.value = 'Gagal terhubung ke server. Periksa koneksi atau CORS.';
     }
-  } else {
-    // tidak ada response (network error)
-    errorMessage.value = 'Gagal terhubung ke server. Periksa koneksi atau CORS.';
   }
 }
-}
+
+
 
 const tambahKategori = async () => {
   if (!newKategori.value.trim()) {
@@ -342,19 +358,23 @@ const tambahKategori = async () => {
   }
 
   try {
-    const res = await axios.post('http://localhost/login_api_lumen/public/api/kategori-produk', {
+    const res = await axiosInstance.post('/kategori-produk', {
       nama_kategori: newKategori.value
-    }, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
     })
 
-    // Tambahkan ke list dan pilih kategori baru
-    kategoriList.value.push(res.data.data)
-    form.value.kategori_id = res.data.data.id
+const kategoriBaru = res.data.data || res.data
 
-    // Reset form modal
+if (kategoriBaru && kategoriBaru.id) {
+  kategoriList.value.push(kategoriBaru)
+  form.value.kategori_id = kategoriBaru.id
+  newKategori.value = ''
+  showKategoriModal.value = false
+  successMessage.value = 'Kategori berhasil ditambahkan!'
+} else {
+  console.error('Data kategori tidak valid:', kategoriBaru)
+  errorMessage.value = 'Data kategori dari server tidak valid.'
+}
+
     newKategori.value = ''
     showKategoriModal.value = false
     successMessage.value = 'Kategori berhasil ditambahkan!'
@@ -373,6 +393,8 @@ const tambahKategori = async () => {
   }
 }
 
+
+
 const resetForm = () => {
   form.value = {
     nama_produk: '',
@@ -386,16 +408,23 @@ const resetForm = () => {
   errors.value = {}
 }
 
+
+
 const closeKategoriModal = () => {
   showKategoriModal.value = false
   newKategori.value = ''
 }
 
+
+
 onMounted(() => {
   getKategori()
   getSatuan()
 })
+
+
 </script>
+
 
 <style scoped>
 .invalid-feedback {

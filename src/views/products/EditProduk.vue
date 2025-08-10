@@ -13,7 +13,7 @@
           </div>
 
           <!-- Main Card -->
-          <div class="card shadow-sm rounded border-0 mb-4">
+          <div class="card shadow-sm rounded border-0 mb-4 position-relative">
             <!-- Loading Overlay -->
             <div v-if="isLoading" class="loading-overlay">
               <div class="spinner-border text-primary" role="status">
@@ -30,24 +30,37 @@
                 <div class="row g-3">
                   <div class="col-md-6">
                     <label class="form-label">Nama Produk</label>
-                    <input v-model="form.nama_produk" type="text" class="form-control"
-                      :class="{ 'is-invalid': errors.nama_produk }" :disabled="isLoading" />
+                    <input
+                      v-model="form.nama_produk"
+                      type="text"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.nama_produk }"
+                      :disabled="isLoading"
+                    />
                     <div class="invalid-feedback">{{ errors.nama_produk }}</div>
                   </div>
 
                   <div class="col-md-6">
                     <label class="form-label">Kategori</label>
                     <div class="d-flex gap-2">
-                      <select v-model="form.kategori_id" class="form-select"
-                        :class="{ 'is-invalid': errors.kategori_id }" style="flex: 1;" :disabled="isLoading">
+                      <select
+                        v-model="form.kategori_id"
+                        class="form-select"
+                        :class="{ 'is-invalid': errors.kategori_id }"
+                        style="flex: 1;"
+                        :disabled="isLoading"
+                      >
                         <option value="" disabled>Pilih Kategori</option>
-                        <template v-for="kategori in kategoriList" :key="kategori?.id">
-                          <option v-if="kategori" :value="kategori.id">
-                            {{ kategori.nama_kategori }}
-                          </option>
-                        </template>
+                        <option v-for="kategori in kategoriList" :key="kategori.id" :value="kategori.id">
+                          {{ kategori.nama_kategori }}
+                        </option>
                       </select>
-                      <button type="button" class="btn btn-primary btn-sm" @click="showKategoriModal = true" :disabled="isLoading">
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-sm"
+                        @click="showKategoriModal = true"
+                        :disabled="isLoading"
+                      >
                         + Tambah
                       </button>
                     </div>
@@ -55,22 +68,51 @@
                   </div>
 
                   <div class="col-md-6">
-                    <label class="form-label">Harga</label>
-                    <input v-model="form.harga" type="number" class="form-control"
-                      :class="{ 'is-invalid': errors.harga }" :disabled="isLoading" />
+                    <label class="form-label">Harga Jual</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.harga }"
+                      :value="hargaDisplay"
+                      @input="onHargaInput"
+                      :disabled="isLoading"
+                      inputmode="numeric"
+                    />
                     <div class="invalid-feedback">{{ errors.harga }}</div>
                   </div>
 
+                  <div class="col-md-6">
+                    <label class="form-label">Harga Modal</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      :class="{ 'is-invalid': errors.harga_modal }"
+                      :value="hargaModalDisplay"
+                      @input="onHargaModalInput"
+                      :disabled="isLoading"
+                      inputmode="numeric"
+                    />
+                    <div class="invalid-feedback">{{ errors.harga_modal }}</div>
+                  </div>
 
                   <div class="col-md-6">
                     <label class="form-label">Deskripsi</label>
-                    <input v-model="form.deskripsi" type="text" class="form-control" :disabled="isLoading" />
+                    <input
+                      v-model="form.deskripsi"
+                      type="text"
+                      class="form-control"
+                      :disabled="isLoading"
+                    />
                   </div>
 
                   <div class="col-md-6">
                     <label class="form-label">Satuan</label>
-                    <select v-model="form.satuan_id" class="form-select"
-                      :class="{ 'is-invalid': errors.satuan_id }" :disabled="isLoading">
+                    <select
+                      v-model="form.satuan_id"
+                      class="form-select"
+                      :class="{ 'is-invalid': errors.satuan_id }"
+                      :disabled="isLoading"
+                    >
                       <option value="" disabled>Pilih Satuan</option>
                       <option v-for="satuan in satuanList" :key="satuan.id" :value="satuan.id">
                         {{ satuan.nama_satuan }}
@@ -93,34 +135,31 @@
       </div>
     </div>
 
-  <!-- Dynamic Modal for Kategori -->
-  <DynamicModal
-    :show="showKategoriModal"
-    title="Tambah Kategori"
-    :loading="isModalLoading"
-    loading-text="Menyimpan..."
-    @close="showKategoriModal = false"
-    @confirm="tambahKategori"
-    :disable-confirm="!newKategori.trim()"
-  >
-    <template #body>
-      <input 
-        v-model="newKategori" 
-        type="text" 
-        class="form-control" 
-        placeholder="Nama kategori baru" 
-        :disabled="isModalLoading"
-      >
-    </template>
-  </DynamicModal>
-
-
+    <!-- Dynamic Modal for Kategori -->
+    <DynamicModal
+      :show="showKategoriModal"
+      title="Tambah Kategori"
+      :loading="isModalLoading"
+      loading-text="Menyimpan..."
+      @close="showKategoriModal = false"
+      @confirm="tambahKategori"
+      :disable-confirm="!newKategori.trim()"
+    >
+      <template #body>
+        <input
+          v-model="newKategori"
+          type="text"
+          class="form-control"
+          placeholder="Nama kategori baru"
+          :disabled="isModalLoading"
+        />
+      </template>
+    </DynamicModal>
   </div>
 </template>
 
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from '@/utils/axiosInstance'
 import DynamicModal from '@/components/DynamicModal.vue'
@@ -128,7 +167,13 @@ import DynamicModal from '@/components/DynamicModal.vue'
 const route = useRoute()
 const produkId = route.params.id
 
-// Loading states
+// Reactive refs untuk harga jual & harga modal yang dipisah ribuan-nya
+const hargaRaw = ref('')        // simpan angka tanpa titik
+const hargaModalRaw = ref('')   // simpan angka tanpa titik
+const hargaDisplay = ref('')    // harga jual yang tampil dengan titik
+const hargaModalDisplay = ref('') // harga modal yang tampil dengan titik
+
+// Loading & modal states
 const isLoading = ref(true)
 const isModalLoading = ref(false)
 
@@ -136,11 +181,12 @@ const isModalLoading = ref(false)
 const showKategoriModal = ref(false)
 const newKategori = ref('')
 
-// Form and data
+// Form dan data
 const form = ref({
   nama_produk: '',
   deskripsi: '',
   harga: '',
+  harga_modal: '',
   kategori_id: '',
   satuan_id: ''
 })
@@ -151,7 +197,47 @@ const errorMessage = ref('')
 const kategoriList = ref([])
 const satuanList = ref([])
 
+// Watch hargaRaw supaya update hargaDisplay dengan format ribuan
+watch(hargaRaw, (newVal) => {
+  hargaDisplay.value = formatRibuan(newVal)
+})
 
+// Watch hargaModalRaw supaya update hargaModalDisplay dengan format ribuan
+watch(hargaModalRaw, (newVal) => {
+  hargaModalDisplay.value = formatRibuan(newVal)
+})
+
+// Event handler input harga jual
+const onHargaInput = (event) => {
+  let val = event.target.value
+  val = val.replace(/[^\d]/g, '') // hapus semua selain angka
+
+  hargaRaw.value = val
+  form.value.harga = val
+}
+
+// Event handler input harga modal
+const onHargaModalInput = (event) => {
+  let val = event.target.value
+  val = val.replace(/[^\d]/g, '') // hapus semua selain angka
+
+  hargaModalRaw.value = val
+  form.value.harga_modal = val
+}
+
+// Format angka ribuan dengan titik
+function formatRibuan(x) {
+  if (!x) return ''
+  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+// Bersihkan titik dan ubah ke number (dipakai sebelum kirim ke server)
+const cleanDotPrice = (str) => {
+  if (!str) return 0
+  return Number(str.replace(/\./g, ''))
+}
+
+// Validasi form
 const validateForm = () => {
   errors.value = {}
 
@@ -161,8 +247,11 @@ const validateForm = () => {
   if (!form.value.kategori_id) {
     errors.value.kategori_id = 'Pilih kategori terlebih dahulu.'
   }
-  if (!form.value.harga || form.value.harga <= 0) {
+  if (!form.value.harga || Number(form.value.harga) <= 0) {
     errors.value.harga = 'Harga harus lebih dari 0.'
+  }
+  if (!form.value.harga_modal || Number(form.value.harga_modal) <= 0) {
+    errors.value.harga_modal = 'Harga modal harus lebih dari 0.'
   }
   if (!form.value.satuan_id) {
     errors.value.satuan_id = 'Pilih satuan terlebih dahulu.'
@@ -171,6 +260,7 @@ const validateForm = () => {
   return Object.keys(errors.value).length === 0
 }
 
+// API get kategori
 const getKategori = async () => {
   try {
     const res = await axios.get('/kategori-produk/all')
@@ -180,6 +270,7 @@ const getKategori = async () => {
   }
 }
 
+// API get satuan
 const getSatuan = async () => {
   try {
     const res = await axios.get('/satuan-produk')
@@ -189,66 +280,68 @@ const getSatuan = async () => {
   }
 }
 
+// API get produk by id
 const getProduk = async () => {
   try {
     const res = await axios.get(`/produk/${produkId}`)
     const data = res.data
-    
+    // Buat harga jadi integer bulat (buang desimal)
+    const hargaBulat = data.harga ? Math.floor(Number(data.harga)) : 0
+    const hargaModalBulat = data.harga_modal ? Math.floor(Number(data.harga_modal)) : 0
     form.value = {
       nama_produk: data.nama_produk,
       deskripsi: data.deskripsi || '',
-      harga: data.harga,
-
+      harga: hargaBulat.toString(),
+      harga_modal: hargaModalBulat.toString(),
       kategori_id: data.kategori_id,
       satuan_id: data.satuan_id
     }
-    
-    // Reset error message jika sebelumnya ada error
+
+    // Set nilai hargaRaw dan hargaModalRaw dari data asli tanpa titik
+    hargaRaw.value = data.harga?.toString() || ''
+    hargaModalRaw.value = data.harga_modal?.toString() || ''
+
+    // Reset error message
     errorMessage.value = ''
-    
   } catch (err) {
     console.error('[getProduk Error]', err.response?.data || err.message)
-    
-    // Handle error berdasarkan status code
+
     if (err.response) {
       switch (err.response.status) {
-        case 401: // Unauthorized
+        case 401:
           errorMessage.value = 'Sesi telah berakhir. Silakan login kembali.'
-          // Interceptor sudah akan handle redirect ke login
           break
-          
-        case 403: // Forbidden
+        case 403:
           errorMessage.value = 'Anda tidak memiliki izin untuk mengakses data ini.'
           break
-          
-        case 404: // Not Found
+        case 404:
           errorMessage.value = 'Data produk tidak ditemukan.'
           break
-          
-        case 500: // Server Error
+        case 500:
           errorMessage.value = 'Terjadi kesalahan server. Silakan coba lagi nanti.'
           break
-          
         default:
           errorMessage.value = 'Gagal memuat data produk. Silakan coba lagi.'
       }
     } else if (err.request) {
-      // Request dibuat tapi tidak mendapat response
       errorMessage.value = 'Tidak ada respon dari server. Periksa koneksi internet Anda.'
     } else {
-      // Error lainnya
       errorMessage.value = 'Terjadi kesalahan saat memuat data produk.'
     }
-    
-    // Optional: Auto-clear error message setelah beberapa detik
+
     setTimeout(() => {
       errorMessage.value = ''
     }, 5000)
   }
 }
 
+// Submit form update produk
 const submitForm = async () => {
   if (!validateForm()) return
+
+  // Bersihkan titik sebelum kirim ke server
+  form.value.harga = cleanDotPrice(hargaRaw.value)
+  form.value.harga_modal = cleanDotPrice(hargaModalRaw.value)
 
   try {
     isLoading.value = true
@@ -263,6 +356,7 @@ const submitForm = async () => {
   }
 }
 
+// Tambah kategori baru
 const tambahKategori = async () => {
   if (!newKategori.value.trim()) return alert('Nama kategori tidak boleh kosong.')
 
@@ -273,7 +367,6 @@ const tambahKategori = async () => {
 
     kategoriList.value.push(res.data)
     form.value.kategori_id = res.data.id
-
     newKategori.value = ''
     showKategoriModal.value = false
 
@@ -288,6 +381,7 @@ const tambahKategori = async () => {
   }
 }
 
+// Lifecycle hooks
 onMounted(async () => {
   try {
     await getKategori()
@@ -309,7 +403,6 @@ onMounted(async () => {
   }
 })
 </script>
-
 
 <style scoped>
 .invalid-feedback {

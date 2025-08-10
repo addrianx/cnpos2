@@ -36,7 +36,7 @@
 
                   <div class="col-md-6">
                     <label class="form-label">Stok Saat Ini</label>
-                    <input type="number" class="form-control" v-model="product.stok" readonly>
+                    <input type="number" class="form-control" v-model="product.stok_akhir" readonly>
                   </div>
 
                   <!-- Stock Adjustment -->

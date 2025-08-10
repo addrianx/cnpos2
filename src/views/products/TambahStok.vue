@@ -44,7 +44,7 @@
                         :key="product.id" 
                         :value="product.id"
                       >
-                        {{ product.nama_produk }} (Stok dasar: {{ product.stok }})
+                        {{ product.nama_produk }} (Stok dasar: {{ product.stok_akhir }})
                       </option>
                     </select>
                     <div class="invalid-feedback">{{ errors.product_id }}</div>
@@ -59,7 +59,7 @@
                     <input 
                       type="number" 
                       class="form-control" 
-                      :value="selectedProduct ? selectedProduct.stok : 0" 
+                      :value="selectedProduct ? selectedProduct.stok_akhir : 0"
                       readonly
                     >
                   </div>
@@ -137,10 +137,12 @@ export default {
     const errorMessage = ref('');
     const errors = ref({});
     const token = localStorage.getItem('token')
+    const stokAkhirList = ref([]);
+    const selectedProductIndex = ref(null)
 
     const stockAddition = ref({
       jumlah: 1,
-      tanggal_masuk: new Date().toISOString().split('T')[0], // Format YYYY-MM-DD
+      tanggal_masuk: '',
       keterangan: ''
     });
 
@@ -150,28 +152,31 @@ export default {
     })
 
     const loadProducts = async () => {
-    try {
+      try {
         loadingProducts.value = true;
         const response = await api.get('/all_produk', {
-        headers: {
+          headers: {
             Authorization: `Bearer ${token}`
           },
-        params: {
-            stock_only: true // Parameter tambahan untuk filter
-        }
+          params: {
+            stock_only: true
+          }
         });
-        
-        // Sesuaikan dengan struktur response API Anda
+
         productList.value = response.data.data || [];
-        
-        // Reset pesan error jika sebelumnya ada
+        stokAkhirList.value = productList.value.map(item => item.stok_akhir || 0);
+
+        // Misal set produk pertama otomatis dipilih
+        if (productList.value.length > 0) {
+          selectedProductIndex.value = 0
+        }
+
         errorMessage.value = '';
-        
-    } catch (err) {
+      } catch (err) {
         handleError(err, 'Gagal memuat daftar produk');
-    } finally {
+      } finally {
         loadingProducts.value = false;
-    }
+      }
     };
 
     const onProductChange = () => {
@@ -183,7 +188,7 @@ export default {
     const submitStockAddition = async () => {
       // Reset error state
         if (isLoading.value) return; // Cegah double-click
-  isLoading.value = true;
+      isLoading.value = true;
       errors.value = {};
 
       
@@ -301,6 +306,7 @@ export default {
     // Lifecycle hooks
     onMounted(() => {
       loadProducts();
+      stockAddition.value.tanggal_masuk = new Date().toISOString().split('T')[0];
     });
 
     return {
